@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Proxy for ScatterAnalyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 1px solid #444;
+            background: #333;
+            color: #fff;
+            border-radius: 4px;
+        }
+        button {
+            background: #6366f1;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+        .result {
+            background: #1e1e1e;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .error {
+            background: #dc2626;
+        }
+        .success {
+            background: #16a34a;
+        }
+    </style>
+</head>
+<body>
+    <h1>CORS Proxy for ScatterAnalyzer</h1>
+    
+    <div class="container">
+        <h2>Test CORS Bypass</h2>
+        <p>This proxy helps bypass CORS restrictions when accessing the target domain.</p>
+        
+        <label for="targetUrl">Target URL:</label>
+        <input type="text" id="targetUrl" value="https://bandar80.idrbo2.com/new-transaction.html" placeholder="Enter target URL">
+        
+        <label for="requestData">Request Data (JSON):</label>
+        <input type="text" id="requestData" value='{"entered_login":"test","entered_password":"test"}' placeholder='{"key":"value"}'>
+        
+        <button onclick="testProxy()">Test CORS Proxy</button>
+        
+        <div id="result" class="result"></div>
+    </div>
+
+    <div class="container">
+        <h2>Extension Script Injection Test</h2>
+        <p>Test injection of Chrome extension scripts to bypass detection.</p>
+        
+        <button onclick="testExtensionInjection()">Test Extension Injection</button>
+        
+        <div id="extensionResult" class="result"></div>
+    </div>
+
+    <script>
+        async function testProxy() {
+            const targetUrl = document.getElementById('targetUrl').value;
+            const requestData = document.getElementById('requestData').value;
+            const resultDiv = document.getElementById('result');
+            
+            try {
+                resultDiv.textContent = 'Testing CORS proxy...';
+                
+                // Use a CORS proxy service
+                const proxyUrl = 'https://cors-anywhere.herokuapp.com/' + targetUrl;
+                
+                const response = await fetch(proxyUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                    },
+                    body: requestData
+                });
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    resultDiv.textContent = 'Success! Response received:\n\n' + data;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = 'Error: ' + response.status + ' ' + response.statusText;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = 'Error: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        function testExtensionInjection() {
+            const resultDiv = document.getElementById('extensionResult');
+            
+            try {
+                // Simulate extension injection
+                const script = document.createElement('script');
+                script.textContent = `
+                    // Extension script simulation
+                    window.bis_register = 'Q2hvbWUgQnJvd3Nlcg%3D%3D';
+                    window.extension_id = 'eppiocemhmnlbhjplcgkofciiegomcon';
+                    
+                    // Override navigator
+                    Object.defineProperty(navigator, 'webdriver', {
+                        get: () => undefined,
+                        configurable: true
+                    });
+                    
+                    // Override localStorage
+                    const originalGetItem = localStorage.getItem;
+                    localStorage.getItem = function(key) {
+                        if (key === 'bis_register') return window.bis_register;
+                        if (key === 'extension_id') return window.extension_id;
+                        return originalGetItem.call(this, key);
+                    };
+                    
+                    console.log('Extension data injected successfully');
+                `;
+                document.head.appendChild(script);
+                
+                resultDiv.textContent = 'Extension injection test completed!\n\n' +
+                    'bis_register: ' + localStorage.getItem('bis_register') + '\n' +
+                    'extension_id: ' + localStorage.getItem('extension_id') + '\n' +
+                    'navigator.webdriver: ' + navigator.webdriver;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = 'Extension injection failed: ' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            testExtensionInjection();
+        });
+    </script>
+</body>
+</html>

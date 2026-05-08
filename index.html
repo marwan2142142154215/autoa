@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scatter Analyzer - KKS Bandar 80</title>
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='%236366f1' d='M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l10-5z'/></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-morphism {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.3);
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(99, 102, 241, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #6366f1;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-active {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+        
+        .log-container {
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            padding: 4px 8px;
+            border-left: 3px solid transparent;
+            margin: 1px 0;
+            transition: all 0.2s ease;
+        }
+        
+        .log-entry:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .log-success { border-left-color: #10b981; background: rgba(16, 185, 129, 0.1); }
+        .log-error { border-left-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+        .log-info { border-left-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+        .log-warning { border-left-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+        
+        .result-card {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-success {
+            background: rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+        
+        .status-failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+        
+        .status-pending {
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.3);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.7);
+        }
+        
+        /* Glow effects */
+        .glow-indigo {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+        
+        .glow-purple {
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white">
+    <!-- Background Effects -->
+    <div class="fixed inset-0 bg-gradient-to-br from-indigo-600/20 via-transparent to-purple-600/20 pointer-events-none"></div>
+    <div class="fixed top-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none"></div>
+    <div class="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+
+    <!-- Main Container -->
+    <div class="min-h-screen p-4 relative z-10">
+        <!-- Header -->
+        <header class="glass-morphism rounded-2xl p-6 mb-6 fade-in">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center glow-indigo">
+                        <i class="fas fa-chart-line text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold gradient-text">Scatter Analyzer</h1>
+                        <p class="text-gray-400 text-sm">KKS Bandar 80 - Complete Analysis Tool</p>
+                    </div>
+                </div>
+                <div id="userProfile" class="hidden">
+                    <div class="flex items-center space-x-3">
+                        <img id="userAvatar" src="" alt="User" class="w-10 h-10 rounded-full border-2 border-indigo-500">
+                        <div>
+                            <p id="userName" class="text-white font-semibold"></p>
+                            <p id="userEmail" class="text-gray-400 text-sm"></p>
+                        </div>
+                        <button onclick="logout()" class="ml-4 px-4 py-2 bg-red-500/20 border border-red-500 text-red-400 rounded-lg hover:bg-red-500/30 transition">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </div>
+                </div>
+                <div id="loginSection">
+                    <button onclick="loginWithGoogle()" class="btn-primary px-6 py-3 text-white rounded-lg font-semibold">
+                        <i class="fab fa-google mr-2"></i> Login dengan Google
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="container mx-auto">
+            <!-- Login Required Section -->
+            <div id="loginRequired" class="glass-morphism rounded-2xl p-12 text-center fade-in">
+                <div class="max-w-md mx-auto">
+                    <div class="relative group mb-8">
+                        <div class="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full"></div>
+                        <div class="relative w-20 h-20 mx-auto rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 flex items-center justify-center shadow-xl group-hover:border-indigo-500/50 transition-all">
+                            <i class="fas fa-lock text-3xl text-indigo-400"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-3xl font-bold text-white mb-4">Login Diperlukan</h2>
+                    <p class="text-gray-400 mb-8">Silakan login dengan akun Google untuk menggunakan aplikasi</p>
+                    <button onclick="loginWithGoogle()" class="btn-primary px-8 py-4 text-white rounded-lg font-semibold text-lg w-full">
+                        <i class="fab fa-google mr-3"></i> Login dengan Google
+                    </button>
+                </div>
+            </div>
+
+            <!-- App Content (Hidden until login) -->
+            <div id="appContent" class="hidden">
+                <!-- Tab Navigation -->
+                <div class="glass-morphism rounded-2xl p-2 mb-6 fade-in">
+                    <div class="grid grid-cols-5 gap-2">
+                        <button onclick="switchTab('rekening')" id="rekeningTab" class="tab-btn px-4 py-3 rounded-lg font-semibold transition tab-active">
+                            <i class="fas fa-university mr-2"></i> Cek Rekening
+                        </button>
+                        <button onclick="switchTab('scatter')" id="scatterTab" class="tab-btn px-4 py-3 rounded-lg font-semibold transition text-gray-400 hover:text-white">
+                            <i class="fas fa-chart-scatter mr-2"></i> Cek Scatter
+                        </button>
+                        <button onclick="switchTab('freespin')" id="freespinTab" class="tab-btn px-4 py-3 rounded-lg font-semibold transition text-gray-400 hover:text-white">
+                            <i class="fas fa-gift mr-2"></i> Cek Freespin
+                        </button>
+                        <button onclick="switchTab('buypin')" id="buypinTab" class="tab-btn px-4 py-3 rounded-lg font-semibold transition text-gray-400 hover:text-white">
+                            <i class="fas fa-shopping-cart mr-2"></i> Buy PIN
+                        </button>
+                        <button onclick="switchTab('history')" id="historyTab" class="tab-btn px-4 py-3 rounded-lg font-semibold transition text-gray-400 hover:text-white">
+                            <i class="fas fa-history mr-2"></i> History
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cek Rekening Tab -->
+                <div id="rekeningContent" class="tab-content glass-morphism rounded-2xl p-6 fade-in">
+                    <h3 class="text-xl font-bold text-white mb-6">
+                        <i class="fas fa-university mr-2"></i> Cek Rekening
+                    </h3>
+                    
+                    <!-- Login Credentials -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div>
+                            <label class="block text-gray-400 text-sm font-medium mb-2">Username</label>
+                            <input type="text" id="rekeningUsername" placeholder="Masukkan username" 
+                                class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-sm font-medium mb-2">Password</label>
+                            <input type="password" id="rekeningPassword" placeholder="Masukkan password" 
+                                class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-sm font-medium mb-2">PIN</label>
+                            <input type="password" id="rekeningPin" placeholder="Masukkan PIN" 
+                                class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- User IDs -->
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm font-medium mb-2">User IDs yang akan dicek</label>
+                        <textarea id="rekeningUserIds" rows="4" placeholder="Masukkan user IDs, pisahkan dengan koma atau baris baru" 
+                            class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                        <p class="text-gray-500 text-sm mt-2">Maksimal 20 user IDs per batch</p>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-4">
+                        <button onclick="checkRekening()" id="checkRekeningBtn" class="btn-primary px-6 py-3 text-white rounded-lg font-semibold">
+                            <i class="fas fa-search mr-2"></i> Cek Rekening
+                        </button>
+                        <button onclick="clearRekeningResults()" class="px-6 py-3 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 transition">
+                            <i class="fas fa-trash mr-2"></i> Bersihkan
+                        </button>
+                        <button onclick="exportRekeningResults()" class="px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition">
+                            <i class="fas fa-download mr-2"></i> Export
+                        </button>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div id="rekeningProgress" class="hidden mt-6">
+                        <div class="flex justify-between text-gray-400 text-sm mb-2">
+                            <span>Progress</span>
+                            <span id="rekeningProgressText">0/0</span>
+                        </div>
+                        <div class="w-full bg-slate-700 rounded-full h-3">
+                            <div id="rekeningProgressBar" class="btn-primary h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="rekeningResults" class="mt-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <p class="text-gray-500 col-span-full text-center py-8">Belum ada hasil. Mulai pengecekan terlebih dahulu.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cek Scatter Tab -->
+                <div id="scatterContent" class="tab-content hidden glass-morphism rounded-2xl p-6 fade-in">
+                    <h3 class="text-xl font-bold text-white mb-6">
+                        <i class="fas fa-chart-scatter mr-2"></i> Cek Scatter
+                    </h3>
+                    
+                    <!-- Scatter Form -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-gray-400 text-sm font-medium mb-2">Username</label>
+                            <input type="text" id="scatterUsername" placeholder="Masukkan username" 
+                                class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-sm font-medium mb-2">Password</label>
+                            <input type="password" id="scatterPassword" placeholder="Masukkan password" 
+                                class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-4">
+                        <button onclick="checkScatter()" id="checkScatterBtn" class="btn-primary px-6 py-3 text-white rounded-lg font-semibold">
+                            <i class="fas fa-chart-scatter mr-2"></i> Cek Scatter
+                        </button>
+                        <button onclick="clearScatterResults()" class="px-6 py-3 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 transition">
+                            <i class="fas fa-trash mr-2"></i> Bersihkan
+                        </button>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="scatterResults" class="mt-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <p class="text-gray-500 col-span-full text-center py-8">Belum ada hasil. Mulai pengecekan scatter terlebih dahulu.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cek Freespin Tab -->
+                <div id="freespinContent" class="tab-content hidden glass-morphism rounded-2xl p-6 fade-in">
+                    <h3 class="text-xl font-bold text-white mb-6">
+                        <i class="fas fa-gift mr-2"></i> Cek Freespin
+                    </h3>
+                    
+                    <!-- Freespin Form -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-gray-400 text-sm font-medium mb-2">Username</label>
+                            <input type="text" id="freespinUsername" placeholder="Masukkan username" 
+                                class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-sm font-medium mb-2">Password</label>
+                            <input type="password" id="freespinPassword" placeholder="Masukkan password" 
+                                class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-4">
+                        <button onclick="checkFreespin()" id="checkFreespinBtn" class="btn-primary px-6 py-3 text-white rounded-lg font-semibold">
+                            <i class="fas fa-gift mr-2"></i> Cek Freespin
+                        </button>
+                        <button onclick="clearFreespinResults()" class="px-6 py-3 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 transition">
+                            <i class="fas fa-trash mr-2"></i> Bersihkan
+                        </button>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="freespinResults" class="mt-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <p class="text-gray-500 col-span-full text-center py-8">Belum ada hasil. Mulai pengecekan freespin terlebih dahulu.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Buy PIN Tab -->
+                <div id="buypinContent" class="tab-content hidden glass-morphism rounded-2xl p-6 fade-in">
+                    <h3 class="text-xl font-bold text-white mb-6">
+                        <i class="fas fa-shopping-cart mr-2"></i> Buy PIN
+                    </h3>
+                    
+                    <!-- Buy PIN Form -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div>
+                            <label class="block text-gray-400 text-sm font-medium mb-2">Username</label>
+                            <input type="text" id="buypinUsername" placeholder="Masukkan username" 
+                                class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-400 text-sm font-medium mb-2">Password</label>
+                            <input type="password" id="buypinPassword" placeholder="Masukkan password" 
+                                class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- PIN Amount -->
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm font-medium mb-2">Jumlah PIN</label>
+                        <input type="number" id="buypinAmount" placeholder="Masukkan jumlah PIN" min="1" 
+                            class="w-full px-4 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-4">
+                        <button onclick="buyPin()" id="buyPinBtn" class="btn-primary px-6 py-3 text-white rounded-lg font-semibold">
+                            <i class="fas fa-shopping-cart mr-2"></i> Buy PIN
+                        </button>
+                        <button onclick="clearBuypinResults()" class="px-6 py-3 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 transition">
+                            <i class="fas fa-trash mr-2"></i> Bersihkan
+                        </button>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="buypinResults" class="mt-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <p class="text-gray-500 col-span-full text-center py-8">Belum ada hasil. Mulai pembelian PIN terlebih dahulu.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div id="historyContent" class="tab-content hidden glass-morphism rounded-2xl p-6 fade-in">
+                    <h3 class="text-xl font-bold text-white mb-6">
+                        <i class="fas fa-history mr-2"></i> Token History
+                    </h3>
+                    
+                    <!-- Token Input -->
+                    <div class="mb-6">
+                        <label class="block text-gray-400 text-sm font-medium mb-2">Token Histori Transaksi</label>
+                        <div class="relative">
+                            <input type="text" id="historyToken" placeholder="Masukkan token jika ada" 
+                                class="w-full px-12 py-3 rounded-lg bg-slate-800/50 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <i class="fas fa-key text-gray-500"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex space-x-4">
+                        <button onclick="loadHistory()" id="loadHistoryBtn" class="btn-primary px-6 py-3 text-white rounded-lg font-semibold">
+                            <i class="fas fa-history mr-2"></i> Load History
+                        </button>
+                        <button onclick="clearHistory()" class="px-6 py-3 bg-slate-700/50 border border-slate-600 text-white rounded-lg font-semibold hover:bg-slate-700 transition">
+                            <i class="fas fa-trash mr-2"></i> Clear History
+                        </button>
+                        <button onclick="exportHistory()" class="px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition">
+                            <i class="fas fa-download mr-2"></i> Export History
+                        </button>
+                    </div>
+
+                    <!-- History Results -->
+                    <div id="historyResults" class="mt-6">
+                        <div class="space-y-4">
+                            <p class="text-gray-500 text-center py-8">Belum ada history. Load history token terlebih dahulu.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="app-scatter.js"></script>
+</body>
+</html>
